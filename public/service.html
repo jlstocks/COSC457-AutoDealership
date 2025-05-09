@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>
+        Jackson & Jackson Dealership
+    </h1>
+    <button onclick="window.location.href='index.html'">Go to Location Data</button>
+    <button onclick="window.location.href='customerdata.html'">Go to Customer Data</button>
+    <button onclick="window.location.href='employeedata.html'">Go to Employee Data</button>
+    <button onclick="window.location.href='vehicles.html'">Go to Vehicles</button>
+</body>
+<h1>Services Available</h1>
+
+  <div id="Service-description"></div>
+
+  <h2>Schedule a New Service</h2>
+  <form id="add-service-form">
+    <input name="CustomerID" placeholder="Requesting Customer ID" required><br>
+    <input name="VehicleID" placeholder="Requesting Vehicle ID" required><br>
+    <input name="ServiceDate" type="date" required><br>
+    <input name="ServiceType" placeholder="Service Type" required><br>
+    <input name="Description" placeholder="Describe the Issue" required><br>
+    <input name="Cost" placeholder="Estimated Cost of Service" required><br>
+    <input name="Status" placeholder="Status of Service" required><br>
+    <input name="EmployeeID" placeholder="Servicing Employee" required><br>
+    <button type="submit">Add Vehicle</button>
+  </form>
+
+  <script>
+    
+    function loadServices() {
+    fetch('http://localhost:3000/api/services')
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById('service-list');
+        list.innerHTML = ''; 
+        data.forEach(ser => {
+          const div = document.createElement('div');
+          div.textContent = `${ser.CustomerID} - ${ser.ServiceType}`;
+          list.appendChild(div);
+        });
+      });
+  }
+
+    document.getElementById('add-service-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData.entries());
+
+    fetch('http://localhost:3000/api/services', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById('service-list');
+      const div = document.createElement('div');
+      div.textContent = `${payload.CustomerID} - ${payload.ServiceType}`;
+      list.appendChild(div);
+
+      this.reset(); 
+    });
+  });
+
+  loadServices();
+  </script>
+</html>

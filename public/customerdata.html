@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>
+        Jackson & Jackson Dealership
+    </h1>
+    <button onclick="window.location.href='index.html'">Go to Location Data</button>
+    <button onclick="window.location.href='employeedata.html'">Go to Employee Data</button>
+    <button onclick="window.location.href='vehicles.html'">Go to Vehicles</button>
+    <button onclick="window.location.href='service.html'">Schedule New Service</button>
+</body>
+<h1>Customer Data</h1>
+
+  <div id="customer-list"></div>
+
+  <h2>Register New Customer</h2>
+  <form id="add-customer-form">
+    <input name="FName" placeholder="Customer First Name" required><br>
+    <input name="LName" placeholder="Customer Last Name" required><br>
+    <input name="Name" placeholder="Customer Name" required><br>
+    <input name="Email" placeholder="Email" required><br>
+    <input name="Phone" placeholder="Phone Number" required><br>
+    <input name="Address" placeholder="Address" required><br>
+    <input name="City" placeholder="City" required><br>
+    <input name="State" placeholder="State" required><br>
+    <input name="Zip" placeholder="Zip Code" required><br>
+    <input name="DOB" type="date" required><br>
+    <input name="DriverLicenseNumber" placeholder="date" required><br>
+    <input name="JoinedDate" type="date" required><br>
+    <input name="PreferredContact" placeholder="Preferred Contact" required><br>
+    <button type="submit">Add Customer</button>
+  </form>
+
+  <script>
+    
+    function loadCustomers() {
+    fetch('http://localhost:3000/api/customers')
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById('customer-list');
+        list.innerHTML = ''; 
+        data.forEach(cus => {
+          const div = document.createElement('div');
+          div.textContent = `${cus.CustomerID} - ${cus.Name}`;
+          list.appendChild(div);
+        });
+      });
+  }
+
+    document.getElementById('add-customer-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData.entries());
+
+    fetch('http://localhost:3000/api/customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById('customer-list');
+      const div = document.createElement('div');
+      div.textContent = `${payload.CustomerID} - ${payload.Name}`;
+      list.appendChild(div);
+
+      this.reset(); 
+    });
+  });
+
+  loadCustomers();
+  </script>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>
+        Jackson & Jackson Dealership
+    </h1>
+    <button onclick="window.location.href='index.html'">Go to Location Data</button>
+    <button onclick="window.location.href='customerdata.html'">Go to Customer Data</button>
+    <button onclick="window.location.href='employeedata.html'">Go to Employee Data</button>
+    <button onclick="window.location.href='service.html'">Schedule New Service</button>
+</body>
+<h1>Veicle Inventory</h1>
+
+  <div id="vehicle-list"></div>
+
+  <h2>Update Vehicle Inventory</h2>
+  <form id="add-vehicle-form">
+    <input name="VIN" placeholder="VIN" required><br>
+    <input name="Make" placeholder="Vehicle Make" required><br>
+    <input name="Model" placeholder="Vehicle Model" required><br>
+    <input name="Year" placeholder="Year" required><br>
+    <input name="Color" placeholder="Color" required><br>
+    <input name="Mileage" placeholder="Mileage" required><br>
+    <input name="NewUsed" placeholder="New or Used" required><br>
+    <input name="PurchasePrice" placeholder="Listed Price" required><br>
+    <input name="SalePrice" placeholder="Price During Sale" required><br>
+    <input name="Status" placeholder="status" required><br>
+    <input name="DateAcquired" type="date" required><br>
+    <button type="submit">Add Vehicle</button>
+  </form>
+
+  <script>
+    
+    function loadVehicles() {
+    fetch('http://localhost:3000/api/vehicles')
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById('vehicle-list');
+        list.innerHTML = ''; 
+        data.forEach(veh => {
+          const div = document.createElement('div');
+          div.textContent = `${veh.Make} - ${veh.VIN}`;
+          list.appendChild(div);
+        });
+      });
+  }
+
+    document.getElementById('add-vehicle-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData.entries());
+
+    fetch('http://localhost:3000/api/vehicles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById('vehicle-list');
+      const div = document.createElement('div');
+      div.textContent = `${payload.Make} - ${payload.VIN}`;
+      list.appendChild(div);
+
+      this.reset(); 
+    });
+  });
+
+  loadVehicles();
+  </script>
+</html>
