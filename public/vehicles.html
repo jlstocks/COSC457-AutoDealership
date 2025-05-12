@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <h1>
+    Jackson & Jackson Dealership
+  </h1>
+  <button onclick="window.location.href='index.html'">Go to Location Data</button>
+  <button onclick="window.location.href='customerdata.html'">Go to Customer Data</button>
+  <button onclick="window.location.href='employeedata.html'">Go to Employee Data</button>
+  <button onclick="window.location.href='service.html'">Schedule New Service</button>
+  <button onclick="window.location.href='engineandfeatures.html'">Engines</button>
+  <button onclick="window.location.href='vehiclelookup.html'">Lookup Vehicle</button>
+  <button onclick="window.location.href='sales.html'">Sales Management</button>
+</body>
+<h1>Vehicle Inventory</h1>
+
+<div id="vehicle-list"></div>
+
+<h2>Update Vehicle Inventory</h2>
+<form id="add-vehicle-form">
+  <input name="VIN" placeholder="VIN" required><br>
+  <select name="Make" required>
+    <option value="">Select Make</option>
+    <option value="Honda">Honda</option>
+    <option value="Toyota">Toyota</option>
+    <option value="Lexus">Lexus</option>
+    <option value="Nissan">Nissan</option>
+  </select><br>
+  <input name="Model" placeholder="Vehicle Model" required><br>
+  <select id="year-select" name="Year" required>Year</select><br>
+  <input name="Color" placeholder="Color" required><br>
+  <input name="Mileage" placeholder="Mileage" required><br>
+  <select name="NewUsed" required>
+    <option value="">New or Used</option>
+    <option value="New">New</option>
+    <option value="Used">Used</option>
+  </select><br>
+  <select id="engine-select" name="EngineID" required>
+    <option value="">Select Engine</option>
+  </select><br>
+  <select id="location-select" name="LocationID" required>
+    <option value="">Select Location</option>
+  </select><br>
+  <input name="PurchasePrice" placeholder="Listed Price" required><br>
+  <input name="SalePrice" placeholder="Price During Sale" required><br>
+  <select name="Status" required>
+    <option value="">Select Status</option>
+    <option value="Available">Available</option>
+    <option value="Sold">Sold</option>
+    <option value="Reserved">Reserved</option>
+    <option value="In Service">In Service</option>
+    <option value="Damaged">Damaged</option>
+    <option value="Transferred">Transferred</option>
+    <option value="Retired">Retired</option>
+  </select><br>
+  <label for="Date-Acquired">Date Acquired:</label>
+  <input name="DateAcquired" type="date" required><br>
+  <h3>Select Features</h3>
+  <select id="feature-select" name="FeatureIDs" multiple required></select><br>
+
+  <button type="submit">Add Vehicle</button>
+
+</form>
+
+<script>
+
+  const yearSelect = document.getElementById('year-select');
+  for (let y = 2025; y >= 1998; y--) {
+    const option = document.createElement('option');
+    option.value = y;
+    option.textContent = y;
+    yearSelect.appendChild(option);
+  }
+
+
+  function loadVehicles() {
+    fetch('http://localhost:3000/api/vehicles')
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById('vehicle-list');
+        list.innerHTML = '';
+        data.forEach(veh => {
+          const div = document.createElement('div');
+          div.textContent = `${veh.Make} ${veh.Model} - ${veh.VIN}`;
+          list.appendChild(div);
+        });
+      });
+  }
+
+  function loadEngines() {
+    fetch('http://localhost:3000/api/engines')
+      .then(res => res.json())
+      .then(data => {
+        const engineSelect = document.getElementById('engine-select');
+        data.forEach(engine => {
+          const option = document.createElement('option');
+          option.value = engine.EngineID;
+          option.textContent = `${engine.EngineID} - ${engine.EngineType} ${engine.Displacement}`;
+          engineSelect.appendChild(option);
+        });
+      });
+  }
+  function loadLocations() {
+    fetch('http://localhost:3000/api/locations')
+      .then(res => res.json())
+      .then(data => {
+        const locationSelect = document.getElementById('location-select');
+        data.forEach(location => {
+          const option = document.createElement('option');
+          option.value = location.LocationID;
+          option.textContent = location.LocationName;
+          locationSelect.appendChild(option);
+        });
+      });
+  }
+
+  function loadFeatures() {
+    fetch('http://localhost:3000/api/features')
+      .then(res => res.json())
+      .then(data => {
+        const select = document.getElementById('feature-select');
+        data.forEach(feature => {
+          const option = document.createElement('option');
+          option.value = feature.FeatureID;
+          option.textContent = feature.FeatureName;
+          select.appendChild(option);
+        });
+      });
+  }
+
+  document.getElementById('add-vehicle-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData.entries());
+
+    fetch('http://localhost:3000/api/vehicles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.json())
+      .then(data => {
+        const vehicleId = data.id;
+
+        const selectedFeatureIds = Array.from(
+          document.getElementById('feature-select').selectedOptions
+        ).map(option => option.value);
+        const featurePromises = selectedFeatureIds.map(featureId => {
+          return fetch('http://localhost:3000/api/vehicle_features', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ VehicleID: vehicleId, FeatureID: featureId })
+          });
+        });
+        Promise.all(featurePromises).then(() => {
+          loadVehicles();
+          this.reset();
+        });
+      });
+  });
+
+  loadVehicles();
+  loadEngines();
+  loadFeatures();
+  loadLocations();
+</script>
+
+</html>

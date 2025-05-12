@@ -1,0 +1,65 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1>
+        Jackson & Jackson Dealership
+    </h1>
+    <button onclick="window.location.href='vehicles.html'">Go to Vehicles</button>
+    <button onclick="window.location.href='customerdata.html'">Go to Customer Data</button>
+    <button onclick="window.location.href='employeedata.html'">Go to Employee Data</button>
+    <button onclick="window.location.href='service.html'">Schedule New Services</button>
+    <button onclick="window.location.href='index.html'">Go to Location Data</button>
+    <button onclick="window.location.href='engineandfeatures.html'">Engines</button>
+    <button onclick="window.location.href='sales.html'">Sales Management</button>
+</body>
+<h1>Vehicle Lookup</h1>
+<input type="text" id="vehicle-id-input" placeholder="Enter VIN Number">
+<button onclick="lookupVehicle()">Search</button>
+
+<div id="vehicle-results"></div>
+
+<script>
+  function lookupVehicle() {
+    const id = document.getElementById('vehicle-id-input').value;
+    fetch(`http://localhost:3000/api/vehicle/vin/${id}/details`)
+      .then(res => res.json())
+      .then(data => {
+        const out = document.getElementById('vehicle-results');
+        if (data.length === 0) {
+          out.innerHTML = "No data found for that VIN Number.";
+          return;
+        }
+
+        const v = data[0]; 
+        out.innerHTML = `
+          <h3>${v.Make} ${v.Model} (${v.Year})</h3>
+          <p><strong>Color:</strong> ${v.Color}</p>
+          <p><strong>Status:</strong> ${v.Status}</p>
+          <p><strong>Engine:</strong> ${v.EngineType} - ${v.Cylinders} cylinders, ${v.Horsepower} HP</p>
+          <p><strong>Owner:</strong> ${v.CustomerFirstName || 'N/A'} ${v.CustomerLastName || ''}</p>
+        `;
+        if (v.Features) {
+          out.innerHTML += `<p><strong>Features:</strong> ${v.Features}</p>`;
+        }
+
+
+        const features = [...new Set(data.map(d => d.FeatureName).filter(Boolean))];
+        if (features.length > 0) {
+          out.innerHTML += `<p><strong>Features:</strong> ${features.join(', ')}</p>`;
+        }
+
+        const services = data.filter(d => d.ServiceDate);
+        if (services.length > 0) {
+          out.innerHTML += `<h4>Service History:</h4>`;
+          services.forEach(s => {
+            out.innerHTML += `<p>${s.ServiceDate}: ${s.ServiceType} (${s.ServiceStatus})</p>`;
+          });
+        }
+      });
+  }
+</script>
+
+</html>

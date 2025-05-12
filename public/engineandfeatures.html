@@ -1,0 +1,183 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+    <h1>
+        Jackson & Jackson Dealership
+    </h1>
+    <button onclick="window.location.href='vehicles.html'">Go to Vehicles</button>
+    <button onclick="window.location.href='customerdata.html'">Go to Customer Data</button>
+    <button onclick="window.location.href='employeedata.html'">Go to Employee Data</button>
+    <button onclick="window.location.href='service.html'">Schedule New Services</button>
+    <button onclick="window.location.href='index.html'">Go to Location Data</button>
+    <button onclick="window.location.href='vehiclelookup.html'">Lookup Vehicle</button>
+    <button onclick="window.location.href='sales.html'">Sales Management</button>
+</body>
+
+<h1>Engine Inventory</h1>
+
+<h2>Add New Engine</h2>
+<form id="add-engine-form">
+    <input name="EngineType" placeholder="Engine Type" required><br>
+    <input name="Displacement" placeholder="Displacement (e.g. 2.0L)" required><br>
+    <input name="Cylinders" placeholder="Cylinders (e.g. 4)" required><br>
+    <input name="Horsepower" type="number" placeholder="Horsepower" required><br>
+    <select name="FuelType" required>
+        <option value="">Select Fuel Type</option>
+        <option value="Gasoline">Gasoline</option>
+        <option value="Diesel">Diesel</option>
+        <option value="Electric">Electric</option>
+        <option value="Hybrid">Hybrid</option>
+        <option value="E85">E85</option>
+    </select><br>
+    <select name="Transmission" required>
+        <option value="">Select Transmission</option>
+        <option value="Automatic">Automatic</option>
+        <option value="Manual">Manual</option>
+        <option value="Semi-Automatic">Semi-Automatic</option>
+    </select><br>
+    <button type="submit">Add Engine</button>
+</form>
+
+<div id="engine-list"></div>
+
+
+<h1>Feature Manager</h1>
+
+<h2>Add New Feature</h2>
+<form id="add-feature-form">
+  <input name="FeatureName" placeholder="Feature Name" required><br>
+  <input name="Description" placeholder="Description" required><br>
+  <button type="submit">Add Feature</button>
+</form>
+
+<select id="feature-dropdown">
+  <option value="">Select a Feature</option>
+</select>
+
+<div id="feature-form" style="display:none;">
+  <h3>Edit Feature</h3>
+  <form id="edit-feature-form">
+    <input name="FeatureName" placeholder="Feature Name" required><br>
+    <input name="Description" placeholder="Description" required><br>
+    <button type="submit">Update Feature</button>
+  </form>
+</div>
+
+<script>
+    function loadEngines() {
+        fetch('http://localhost:3000/api/engines')
+            .then(res => res.json())
+            .then(data => {
+                const list = document.getElementById('engine-list');
+                list.innerHTML = '<h2>All Engines</h2>';
+                data.forEach(e => {
+                    const div = document.createElement('div');
+                    div.textContent = `${e.EngineID} - ${e.EngineType}, ${e.Displacement}, ${e.Cylinders} Cyl, ${e.Horsepower} HP`;
+                    list.appendChild(div);
+                });
+            });
+    }
+
+    document.getElementById('add-engine-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const payload = Object.fromEntries(formData.entries());
+
+        fetch('http://localhost:3000/api/engines', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(res => res.json())
+            .then(data => {
+                this.reset();
+                loadEngines();
+            });
+    });
+
+    let selectedFeatureId = null;
+document.getElementById('add-feature-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const payload = Object.fromEntries(formData.entries());
+
+  fetch('http://localhost:3000/api/features', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(data => {
+    
+    this.reset();
+
+    // Refresh dropdown
+    const dropdown = document.getElementById('feature-dropdown');
+    dropdown.innerHTML = '<option value="">Select a Feature</option>';
+
+    fetch('http://localhost:3000/api/features')
+      .then(res => res.json())
+      .then(features => {
+        features.forEach(feature => {
+          const option = document.createElement('option');
+          option.value = feature.FeatureID;
+          option.textContent = feature.FeatureName;
+          dropdown.appendChild(option);
+        });
+      });
+  });
+});
+
+fetch('http://localhost:3000/api/features')
+  .then(res => res.json())
+  .then(data => {
+    const dropdown = document.getElementById('feature-dropdown');
+    data.forEach(feature => {
+      const option = document.createElement('option');
+      option.value = feature.FeatureID;
+      option.textContent = feature.FeatureName;
+      dropdown.appendChild(option);
+    });
+  });
+
+document.getElementById('feature-dropdown').addEventListener('change', function() {
+  selectedFeatureId = this.value;
+  if (!selectedFeatureId) return;
+
+  fetch(`http://localhost:3000/api/feature/${selectedFeatureId}`)
+    .then(res => res.json())
+    .then(feature => {
+      document.querySelector('#feature-form').style.display = 'block';
+      const form = document.forms['edit-feature-form'];
+      form.FeatureName.value = feature.FeatureName;
+      form.Description.value = feature.Description;
+    });
+});
+
+document.getElementById('edit-feature-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const payload = Object.fromEntries(formData.entries());
+
+  fetch(`http://localhost:3000/api/feature/${selectedFeatureId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(data => {
+    
+  });
+});
+
+    loadEngines();
+    
+</script>
+
+
+</html>

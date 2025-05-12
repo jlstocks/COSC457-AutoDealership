@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>
+        Jackson & Jackson Dealership
+    </h1>
+    <button onclick="window.location.href='vehiclelookup.html'">Lookup Vehicle</button>
+    <button onclick="window.location.href='vehicles.html'">Go to Vehicles</button>
+    <button onclick="window.location.href='customerdata.html'">Go to Customer Data</button>
+    <button onclick="window.location.href='employeedata.html'">Go to Employee Data</button>
+    <button onclick="window.location.href='service.html'">Schedule New Services</button>
+    <button onclick="window.location.href='engineandfeatures.html'">Engines</button>
+    <button onclick="window.location.href='sales.html'">Sales Management</button>
+  </body>
+<h1>Store Locations</h1>
+
+  <div id="location-list"></div>
+
+  <h2>Add New Location</h2>
+  <form id="add-location-form">
+    <input name="LocationName" placeholder="Location Name" required><br>
+    <input name="Address" placeholder="Address" required><br>
+    <input name="City" placeholder="City" required><br>
+    <input name="State" placeholder="State" required><br>
+    <input name="ZIP" placeholder="ZIP Code" required><br>
+    <input name="Phone" placeholder="Phone Number" required><br>
+    <input name="OpeningDate" type="date" required><br>
+    <input name="ManagerID" placeholder="Manager ID" required><br>
+    <button type="submit">Add Location</button>
+  </form>
+
+  <script>
+    
+    function loadLocations() {
+    fetch('http://localhost:3000/api/locations')
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById('location-list');
+        list.innerHTML = ''; 
+        data.forEach(loc => {
+          const div = document.createElement('div');
+          div.textContent = `${loc.LocationName} - ${loc.City}`;
+          list.appendChild(div);
+        });
+      });
+  }
+
+    document.getElementById('add-location-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData.entries());
+
+    fetch('http://localhost:3000/api/locations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById('location-list');
+      const div = document.createElement('div');
+      div.textContent = `${payload.LocationName} - ${payload.City}`;
+      list.appendChild(div);
+
+      this.reset(); 
+    });
+  });
+
+  loadLocations();
+  </script>
+</html>

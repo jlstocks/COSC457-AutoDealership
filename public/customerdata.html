@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <h1>
+    Jackson & Jackson Dealership
+  </h1>
+  <button onclick="window.location.href='index.html'">Go to Location Data</button>
+  <button onclick="window.location.href='employeedata.html'">Go to Employee Data</button>
+  <button onclick="window.location.href='vehicles.html'">Go to Vehicles</button>
+  <button onclick="window.location.href='service.html'">Schedule New Service</button>
+  <button onclick="window.location.href='vehiclelookup.html'">Lookup Vehicle</button>
+  <button onclick="window.location.href='engineandfeatures.html'">Engines</button>
+  <button onclick="window.location.href='sales.html'">Sales Management</button>
+</body>
+<h1>Customer Data</h1>
+
+<div id="customer-list"></div>
+<h2>Lookup Customer by ID</h2>
+<form id="lookup-customer-form">
+  <input name="CustomerID" placeholder="Enter Customer ID" required>
+  <button type="submit">Find Customer</button>
+</form>
+<div id="lookup-result"></div>
+
+<h2>Register New Customer</h2>
+
+
+<form id="add-customer-form">
+  <input name="FName" placeholder="Customer First Name" required><br>
+  <input name="LName" placeholder="Customer Last Name" required><br>
+  <input name="Email" placeholder="Email" required><br>
+  <input name="Phone" placeholder="Phone Number" required><br>
+  <input name="Address" placeholder="Address" required><br>
+  <input name="City" placeholder="City" required><br>
+  <input name="State" placeholder="State" required><br>
+  <input name="Zip" placeholder="Zip Code" required><br>
+  <label for="joined-date">Birth Date:</label>
+  <input name="DOB" type="date" required><br>
+  <input name="DriverLicenseNumber" placeholder="Drivers License Number" required><br>
+  <label for="joined-date">Join Date:</label>
+  <input name="JoinedDate" type="date" required><br>
+  <select name="PreferredContact" required>
+    <option value="">Preferred Contact</option>
+    <option value="Email">Email</option>
+    <option value="Text">Text</option>
+  </select><br>
+  <button type="submit">Add Customer</button>
+</form>
+
+<script>
+  function loadCustomers() {
+    fetch('http://localhost:3000/api/customers')
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById('customer-list');
+        list.innerHTML = '';
+        data.forEach(cus => {
+          const div = document.createElement('div');
+          div.textContent = `${cus.CustomerID} - ${cus.FName} ${cus.LName}`;
+          list.appendChild(div);
+        });
+      });
+  }
+  document.getElementById('add-customer-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData.entries());
+
+    fetch('http://localhost:3000/api/customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.json())
+      .then(data => {
+        loadCustomers();
+        this.reset();
+      });
+  });
+
+  document.getElementById('lookup-customer-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const id = this.CustomerID.value;
+
+  fetch(`http://localhost:3000/api/customers/${id}`)
+    .then(res => {
+      if (!res.ok) throw new Error('Customer not found');
+      return res.json();
+    })
+    .then(customer => {
+      const resultDiv = document.getElementById('lookup-result');
+      resultDiv.innerHTML = `<strong>Customer:</strong> ${customer.FName} ${customer.LName}<br>
+                             <strong>Email:</strong> ${customer.Email}<br>
+                             <strong>Phone:</strong> ${customer.Phone}`;
+    })
+    .catch(err => {
+      document.getElementById('lookup-result').textContent = 'Customer not found.';
+    });
+});
+
+
+  loadCustomers();
+</script>
+
+</html>

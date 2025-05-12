@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Management</title>
+</head>
+
+<body>
+  <h1>
+    Jackson & Jackson Dealership
+  </h1>
+  <button onclick="window.location.href='index.html'">Go to Location Data</button>
+  <button onclick="window.location.href='customerdata.html'">Go to Customer Data</button>
+  <button onclick="window.location.href='employeedata.html'">Go to Employee Data</button>
+  <button onclick="window.location.href='vehicles.html'">Go to Vehicles</button>
+  <button onclick="window.location.href='service.html'">Schedule New Service</button>
+  <button onclick="window.location.href='vehiclelookup.html'">Lookup Vehicle</button>
+  <button onclick="window.location.href='engineandfeatures.html'">Engines</button>
+  <h1>Sales Management</h1>
+
+  <div id="recent-sales-list"></div>
+
+  <h2>Record New Sale</h2>
+  <form id="add-sale-form">
+    <select name="VehicleID" id="vehicle-select" required>
+      <option value="">Select Vehicle (Available Only)</option>
+    </select><br>
+
+    <select name="CustomerID" id="customer-select" required>
+      <option value="">Select Customer</option>
+    </select><br>
+
+    <select name="EmployeeID" id="employee-select" required>
+      <option value="">Select Sales Employee</option>
+    </select><br>
+
+    <label for="sale-date">Sale Date:</label>
+    <input name="SaleDate" id="sale-date" type="date" required><br>
+
+    <input name="SalePrice" placeholder="Sale Price" type="number" min="0" required><br>
+    <input name="TaxAmount" placeholder="Tax Amount" type="number" min="0" required><br>
+    <input name="TotalAmount" placeholder="Total Amount" type="number" min="0" required><br>
+
+    <h3>Payment Information</h3>
+    <select name="PaymentMethod" required>
+      <option value="">Select Payment Method</option>
+      <option value="Cash">Cash</option>
+      <option value="Credit Card">Credit Card</option>
+      <option value="Financing">Financing</option>
+      <option value="Bank Transfer">Bank Transfer</option>
+    </select><br>
+
+    <input name="TransactionReference" placeholder="Transaction Reference" required><br>
+    <button type="submit">Complete Sale</button>
+  </form>
+
+  <div id="message"></div>
+
+  <h2>Sale Lookup</h2>
+  <form id="lookup-sale-form">
+    <input name="SaleID" placeholder="Enter Sale ID" required>
+    <button type="submit">Find Sale</button>
+  </form>
+  <div id="lookup-result"></div>
+
+  <script>
+    document.querySelector('input[name="SalePrice"]').addEventListener('input', calculateTotal);
+    document.querySelector('input[name="TaxAmount"]').addEventListener('input', calculateTotal);
+
+    function calculateTotal() {
+      const salePrice = parseFloat(document.querySelector('input[name="SalePrice"]').value) || 0;
+      const taxAmount = parseFloat(document.querySelector('input[name="TaxAmount"]').value) || 0;
+      document.querySelector('input[name="TotalAmount"]').value = (salePrice + taxAmount).toFixed(2);
+    }
+
+    document.getElementById('sale-date').valueAsDate = new Date();
+
+    function loadRecentSales() {
+      fetch('http://localhost:3000/api/sales')
+        .then(res => res.json())
+        .then(data => {
+          const list = document.getElementById('recent-sales-list');
+          list.innerHTML = '<h3>Recent Sales</h3>';
+          if (data.length === 0) {
+            list.innerHTML += '<p>No sales recorded yet.</p>';
+            return;
+          }
+          
+          data.slice(0, 10).forEach(sale => {
+            const div = document.createElement('div');
+            const date = new Date(sale.SaleDate).toLocaleDateString();
+            div.innerHTML = `<strong>Sale #${sale.SaleID}</strong> - Vehicle ID: ${sale.VehicleID}, 
+                            Customer ID: ${sale.CustomerID}, Date: ${date}, Amount: $${sale.TotalAmount}`;
+            list.appendChild(div);
+          });
+        })
+        .catch(err => {
+          console.error('Error loading sales:', err);
+          document.getElementById('recent-sales-list').innerHTML = '<p>Error loading sales data.</p>';
+        });
+    }
+
+    function loadAvailableVehicles() {
+      fetch('http://localhost:3000/api/vehicles/available')
+        .then(res => res.json())
+        .then(data => {
+          const select = document.getElementById('vehicle-select');
+          select.innerHTML = '<option value="">Select Vehicle (Available Only)</option>';
+          data.forEach(vehicle => {
+            const option = document.createElement('option');
+            option.value = vehicle.VehicleID;
+            option.textContent = `${vehicle.VehicleID} - ${vehicle.Make} ${vehicle.Model} (${vehicle.Year}) - $${vehicle.PurchasePrice}`;
+            select.appendChild(option);
+          });
+        })
+        .catch(err => {
+          console.error('Error loading vehicles:', err);
+        });
+    }
+
+    function loadCustomers() {
+      fetch('http://localhost:3000/api/customers')
+        .then(res => res.json())
+        .then(data => {
+          const select = document.getElementById('customer-select');
+          select.innerHTML = '<option value="">Select Customer</option>';
+          data.forEach(customer => {
+            const option = document.createElement('option');
+            option.value = customer.CustomerID;
+            option.textContent = `${customer.CustomerID} - ${customer.FName} ${customer.LName}`;
+            select.appendChild(option);
+          });
+        })
+        .catch(err => {
+          console.error('Error loading customers:', err);
+        });
+    }
+
+    function loadEmployees() {
+      fetch('http://localhost:3000/api/employees')
+        .then(res => res.json())
+        .then(data => {
+          const select = document.getElementById('employee-select');
+          select.innerHTML = '<option value="">Select Sales Employee</option>';
+          data.forEach(employee => {
+            const option = document.createElement('option');
+            option.value = employee.EmployeeID;
+            option.textContent = `${employee.EmployeeID} - ${employee.FName} ${employee.LName}`;
+            select.appendChild(option);
+          });
+        })
+        .catch(err => {
+          console.error('Error loading employees:', err);
+        });
+    }
+
+    document.getElementById('vehicle-select').addEventListener('change', function() {
+      const vehicleId = this.value;
+      if (!vehicleId) return;
+
+      fetch(`http://localhost:3000/api/vehicles/${vehicleId}`)
+        .then(res => res.json())
+        .then(vehicle => {
+          const suggestedPrice = vehicle.SalePrice || vehicle.PurchasePrice;
+          document.querySelector('input[name="SalePrice"]').value = suggestedPrice;
+          const estimatedTax = Math.round(suggestedPrice * 0.06);
+          document.querySelector('input[name="TaxAmount"]').value = estimatedTax;
+          
+          calculateTotal();
+        })
+        .catch(err => {
+          console.error('Error fetching vehicle details:', err);
+        });
+    });
+
+    document.getElementById('add-sale-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const saleData = Object.fromEntries(formData.entries());
+      
+      fetch('http://localhost:3000/api/sales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(saleData)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to create sale');
+        return res.json();
+      })
+      .then(saleResult => {
+        const paymentData = {
+          SaleID: saleResult.id,
+          PaymentDate: saleData.SaleDate,
+          Amount: saleData.TotalAmount,
+          PaymentMethod: saleData.PaymentMethod,
+          TransactionReference: saleData.TransactionReference,
+          Status: 'Completed'
+        };
+        
+        return fetch('http://localhost:3000/api/payments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(paymentData)
+        });
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to create payment');
+        return res.json();
+      })
+      .then(() => {
+        return fetch(`http://localhost:3000/api/vehicles/${saleData.VehicleID}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ Status: 'Sold' })
+        });
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to update vehicle status');
+        return res.json();
+      })
+      .then(() => {
+        this.reset();
+        document.getElementById('sale-date').valueAsDate = new Date();
+        
+        loadRecentSales();
+        loadAvailableVehicles();
+      })
+      .catch(err => {
+        console.error('Error completing sale:', err);
+      });
+    });
+
+    document.getElementById('lookup-sale-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const saleId = this.SaleID.value;
+
+      fetch(`http://localhost:3000/api/sales/${saleId}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Sale not found');
+          return res.json();
+        })
+        .then(sale => {
+          return Promise.all([
+            fetch(`http://localhost:3000/api/customers/${sale.CustomerID}`).then(res => res.json()),
+            fetch(`http://localhost:3000/api/vehicles/${sale.VehicleID}`).then(res => res.json()),
+            fetch(`http://localhost:3000/api/employees/${sale.EmployeeID}`).then(res => res.json()),
+            fetch(`http://localhost:3000/api/payments/sale/${sale.SaleID}`).then(res => res.json()),
+            Promise.resolve(sale)
+          ]);
+        })
+        .then(([customer, vehicle, employee, payments, sale]) => {
+          const saleDate = new Date(sale.SaleDate).toLocaleDateString();
+          const resultDiv = document.getElementById('lookup-result');
+          
+          resultDiv.innerHTML = `
+            <h3>Sale #${sale.SaleID} Details</h3>
+            <p><strong>Date:</strong> ${saleDate}</p>
+            <p><strong>Vehicle:</strong> ${vehicle.Make} ${vehicle.Model} (${vehicle.Year}), VIN: ${vehicle.VIN}</p>
+            <p><strong>Customer:</strong> ${customer.FName} ${customer.LName}</p>
+            <p><strong>Sales Representative:</strong> ${employee.FName} ${employee.LName}</p>
+            <p><strong>Sale Price:</strong> $${sale.SalePrice}</p>
+            <p><strong>Tax Amount:</strong> $${sale.TaxAmount}</p>
+            <p><strong>Total Amount:</strong> $${sale.TotalAmount}</p>
+            
+            <h4>Payment Information</h4>
+          `;
+          
+          if (payments.length === 0) {
+            resultDiv.innerHTML += '<p>No payment records found.</p>';
+          } else {
+            payments.forEach(payment => {
+              const paymentDate = new Date(payment.PaymentDate).toLocaleDateString();
+              resultDiv.innerHTML += `
+                <p><strong>Payment Method:</strong> ${payment.PaymentMethod}</p>
+                <p><strong>Amount:</strong> $${payment.Amount}</p>
+                <p><strong>Date:</strong> ${paymentDate}</p>
+                <p><strong>Reference:</strong> ${payment.TransactionReference}</p>
+                <p><strong>Status:</strong> ${payment.Status}</p>
+              `;
+            });
+          }
+        })
+        .catch(err => {
+          document.getElementById('lookup-result').innerHTML = 'Sale not found or error retrieving data.';
+          console.error('Error looking up sale:', err);
+        });
+    });
+
+    loadRecentSales();
+    loadAvailableVehicles();
+    loadCustomers();
+    loadEmployees();
+  </script>
+</body>
+
+</html>

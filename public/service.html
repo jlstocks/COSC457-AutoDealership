@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <h1>
+    Jackson & Jackson Dealership
+  </h1>
+  <button onclick="window.location.href='index.html'">Go to Location Data</button>
+  <button onclick="window.location.href='customerdata.html'">Go to Customer Data</button>
+  <button onclick="window.location.href='employeedata.html'">Go to Employee Data</button>
+  <button onclick="window.location.href='vehicles.html'">Go to Vehicles</button>
+  <button onclick="window.location.href='engineandfeatures.html'">Engines</button>
+  <button onclick="window.location.href='vehiclelookup.html'">Lookup Vehicle</button>
+  <button onclick="window.location.href='sales.html'">Sales Management</button>
+</body>
+<h1>Services Available</h1>
+
+<h2>Ongoing Services</h2>
+<div id="ongoing-services"></div>
+
+<div id="Service-description"></div>
+
+<h2>Schedule a New Service</h2>
+<form id="add-service-form">
+  <select name="CustomerID" id="customer-select" required>
+    <option value="">Select Customer</option>
+  </select><br>
+
+  <select name="VehicleID" id="vehicle-select" required>
+    <option value="">Select Vehicle (by VIN)</option>
+  </select><br>
+
+
+  <input name="ServiceDate" type="date" required><br>
+  <input name="ServiceType" placeholder="Service Type" required><br>
+  <input name="Description" placeholder="Describe the Issue" required><br>
+  <input name="Cost" placeholder="Estimated Cost of Service" required><br>
+  <select name="Status" required>
+    <option value="">Select Service Status</option>
+    <option value="Scheduled">Scheduled</option>
+    <option value="In Progress">In Progress</option>
+    <option value="Completed">Completed</option>
+    <option value="Canceled">Canceled</option>
+  </select><br>
+
+  <select name="EmployeeID" id="employee-select" required>
+    <option value="">Select Employee</option>
+  </select><br>
+  <button type="submit">Add Service</button>
+</form>
+
+<script>
+  function loadServices() {
+    fetch('http://localhost:3000/api/services')
+      .then(res => res.json())
+      .then(data => {
+        const ongoingDiv = document.getElementById('ongoing-services');
+        ongoingDiv.innerHTML = ''; 
+
+        data.forEach(service => {
+          const div = document.createElement('div');
+          div.innerHTML = `
+            <strong>${service.ServiceType}</strong> for Customer #${service.CustomerID} 
+            on Vehicle #${service.VehicleID}<br>
+            Status: ${service.Status}
+            <button onclick="markServiceCompleted(${service.ServiceID})">Mark Completed</button>
+            <hr>
+          `;
+          ongoingDiv.appendChild(div);
+        });
+      });
+  }
+
+  function loadCustomers() {
+    fetch('http://localhost:3000/api/customers')
+      .then(res => res.json())
+      .then(data => {
+        const select = document.getElementById('customer-select');
+        data.forEach(cus => {
+          const option = document.createElement('option');
+          option.value = cus.CustomerID;
+          option.textContent = `${cus.FName} ${cus.LName}`;
+          select.appendChild(option);
+        });
+      });
+  }
+
+
+  function loadVehicles() {
+    fetch('http://localhost:3000/api/vehicles')
+      .then(res => res.json())
+      .then(data => {
+        const select = document.getElementById('vehicle-select');
+        data.forEach(v => {
+          const option = document.createElement('option');
+          option.value = v.VehicleID;
+          option.textContent = `${v.VehicleID} - ${v.VIN}`;
+          select.appendChild(option);
+        });
+      });
+  }
+
+
+  function loadEmployees() {
+    fetch('http://localhost:3000/api/employees')
+      .then(res => res.json())
+      .then(data => {
+        const select = document.getElementById('employee-select');
+        data.forEach(emp => {
+          const option = document.createElement('option');
+          option.value = emp.EmployeeID;
+          option.textContent = `${emp.EmployeeID} - ${emp.FName} ${emp.LName}`;
+          select.appendChild(option);
+        });
+      });
+  }
+
+  function loadOngoingServices() {
+  fetch('http://localhost:3000/api/services')
+    .then(res => res.json())
+    .then(data => {
+      const ongoingDiv = document.getElementById('ongoing-services');
+      ongoingDiv.innerHTML = ''; 
+
+      data
+        .filter(service => service.Status === 'Scheduled' || service.Status === 'In Progress')
+        .forEach(service => {
+          const div = document.createElement('div');
+          div.innerHTML = `
+            <strong>${service.ServiceType}</strong> for Customer #${service.CustomerID} 
+            on Vehicle #${service.VehicleID}<br>
+            Status: ${service.Status}
+            <button onclick="markServiceCompleted(${service.ServiceID})">Mark Completed</button>
+            <hr>
+          `;
+          ongoingDiv.appendChild(div);
+        });
+    });
+}
+
+function markServiceCompleted(serviceId) {
+  fetch(`http://localhost:3000/api/services/${serviceId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ Status: 'Completed' })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Failed to update");
+    return res.json();
+  })
+  .then(() => {
+    alert('Service marked as completed!');
+    loadOngoingServices(); 
+  })
+  .catch(err => {
+    console.error('Update failed:', err);
+    alert('Could not update service status.');
+  });
+}
+  document.getElementById('add-service-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData.entries());
+
+    fetch('http://localhost:3000/api/services', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.json())
+      .then(data => {
+        loadServices();
+        loadOngoingServices();
+        this.reset();
+      });
+  });
+
+  loadServices();
+  loadCustomers();
+  loadVehicles();
+  loadEmployees();
+  loadOngoingServices();
+</script>
+
+</html>
