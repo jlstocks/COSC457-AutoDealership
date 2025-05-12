@@ -1,6 +1,6 @@
 # AutoDealers
 Database Project for COSC457: Database Management Systems.
-
+Jackson Stockstill and Xavier Jackson
 
 ## Necessary Software/Programs
 Our database project uses the following software to run. 
@@ -17,12 +17,12 @@ Additionally, Git will allow for easy cloning of this repository but is not requ
 ## Installation
 1. Clone the repository using git and navigate into directory,
 ```
-git clone 
-d
+git clone https://github.com/jlstocks/COSC457-AutoDealership
+cd COSC457-AutoDealership
 ```
 or curl the repository to a desired directory and unzip the contents.
 ```
-curl -L -o repository.zip 
+curl -L -o repository.zip https://github.com/jlstocks/COSC457-AutoDealership
 unzip repository.zip
 cd 
 ```
